@@ -86,7 +86,7 @@ request({
 
 // persistent menu
 request({
-  url: 'https://graph.facebook.com/v2.8/me/thread_settings',
+  url: 'https://graph.facebook.com/v2.9/me/thread_settings',
   qs: {access_token: PAGE_ACCESS_TOKEN},
   method: 'POST',
   json: {
@@ -291,7 +291,7 @@ function callSendAPI(messageData) {
 
 function sendWelcome(recipientId) {
   request({
-      url: 'https://graph.facebook.com/v2.8/' + recipientId 
+      url: 'https://graph.facebook.com/v2.9/' + recipientId 
         + '?access_token=' + PAGE_ACCESS_TOKEN
     },
     function (error, response, body) {
