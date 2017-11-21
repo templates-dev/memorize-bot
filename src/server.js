@@ -214,9 +214,11 @@ function receivedMessage(event) {
         sendWelcome(senderID);
         
     else if (textMatches(messageText, "btc")) 
-      sendPrice(messageText);
+      sendPrice(senderID, messageText);
     else if (textMatches(messageText, "eth")) 
-      sendReadReceipt(senderID);
+      sendPrice(senderID, messageText);
+    else if (textMatches(messageText, "ltc")) 
+      sendPrice(senderID, messageText);
     else if (textMatches(messageText, "read receipt")) 
       sendReadReceipt(senderID);
     else if (textMatches(messageText, "typing on")) 
@@ -233,18 +235,17 @@ function receivedMessage(event) {
   }
 }
 
-function sendPrice(messageData) {
+function sendPrice(receiptId, messageData) {
   request({
     uri: 'https://api.coinbase.com/v2/prices/'+messageData+'-USD/spot',
 
   }, function (error, response, body) {
     if (!error) {
-      JSON.parse(body).forEach(function(data){    
-        console.error("data"+data.data);
-      });
-      
+      const parsed = JSON.parse(body);
+      const price = parsed.data.amount;
+      sendTextMessage(receiptId, messageData+" price: "+price+" USD");
     } else {
-      console.error("Failed calling Send API");
+      console.error("Failed calling Coinbase API");
     }
   });  
 }
