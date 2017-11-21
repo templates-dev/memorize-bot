@@ -212,6 +212,11 @@ function receivedMessage(event) {
     
     if (textMatches(messageText, "get started")) 
         sendWelcome(senderID);
+        
+    else if (textMatches(messageText, "btc")) 
+      sendPrice(messageText);
+    else if (textMatches(messageText, "eth")) 
+      sendReadReceipt(senderID);
     else if (textMatches(messageText, "read receipt")) 
       sendReadReceipt(senderID);
     else if (textMatches(messageText, "typing on")) 
@@ -226,6 +231,22 @@ function receivedMessage(event) {
   } else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
   }
+}
+
+function sendPrice(messageData) {
+  request({
+    uri: 'https://api.coinbase.com/v2/prices/'+messageData+'-USD/spot',
+
+  }, function (error, response, body) {
+    if (!error) {
+      JSON.parse(body).forEach(function(data){    
+        console.error("data"+data.data);
+      });
+      
+    } else {
+      console.error("Failed calling Send API");
+    }
+  });  
 }
 
 // текст илгээх
