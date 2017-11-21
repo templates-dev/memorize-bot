@@ -210,12 +210,7 @@ function receivedMessage(event) {
 
   if (messageText) {
     
-    var result = answerAI(messageText);
-    
-    //Хэрэглэгчийн хайсан өгөгдөл олдсон эсэх
-    if(result == null || result == '')
-      sendTextMessage(senderID, "Уучлаарай, та асуултаа тодорхтой оруулна уу.");
-    else if (textMatches(messageText, "get started")) 
+    if (textMatches(messageText, "get started")) 
         sendWelcome(senderID);
     else if (textMatches(messageText, "read receipt")) 
       sendReadReceipt(senderID);
@@ -223,10 +218,10 @@ function receivedMessage(event) {
       sendTypingOn(senderID);
     else if (textMatches(messageText, "typing off")) 
       sendTypingOff(senderID);
-    else if (textMatches(messageText, "тусламж")) 
+    else if (textMatches(messageText, "help")) 
       sendHelp(senderID);
     else
-      sendTextMessage(senderID, result+"");
+      sendWelcome(senderID);
     
   } else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
