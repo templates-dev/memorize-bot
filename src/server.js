@@ -8,10 +8,7 @@ const express = require( 'express'),
       crypto = require( 'crypto'),
       https = require( 'https'),
       request = require( 'request'),
-      session = require( 'express-session'),
-      synaptic = require( 'synaptic'),
-      NaturalSynaptic = require( 'natural-synaptic'),
-      limdu = require('limdu');
+      session = require( 'express-session');
 
 const app = express();
 
@@ -24,14 +21,6 @@ app.use(function(err, req, res, next) {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
-
-var Neuron = synaptic.Neuron,
-  	Layer = synaptic.Layer,
-  	Network = synaptic.Network,
-  	Trainer = synaptic.Trainer,
-  	Architect = synaptic.Architect;
-var limduClassifier; //limdu classifier
-var network; //synaptic network
 
 const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? 
   process.env.MESSENGER_APP_SECRET :
@@ -110,12 +99,12 @@ request({
       },
       {
         "type":"web_url",
-        "title":"🤖 Танилцуулга 👉",
+        "title":"🤖 Bot 👉",
         "url":SERVER_URL
       },
       {
         "type":"web_url",
-        "title":"Тусламж",
+        "title":"Help",
         "url":SERVER_URL
       }
     ]
@@ -157,9 +146,7 @@ app.post('/webhook', function (req, res) {
           receivedPostback(messagingEvent);
         } else if (messagingEvent.read) {
           receivedMessageRead(messagingEvent);
-        } else if (messagingEvent.account_linking) {
-          receivedAccountLink(messagingEvent);
-        }else {
+        } else {
           console.log("Webhook received unknown messagingEvent: ", messagingEvent);
         }
       });
@@ -226,44 +213,16 @@ function receivedMessage(event) {
     var result = answerAI(messageText);
     
     //Хэрэглэгчийн хайсан өгөгдөл олдсон эсэх
-    if(result == null || result == ''){
+    if(result == null || result == '')
       sendTextMessage(senderID, "Уучлаарай, та асуултаа тодорхтой оруулна уу.");
-      // askMore(senderID, messageText);
-    }
-    else if (messageText == "update")
-      sendTextMessage(senderID, updateJSON());    
-    else if (textMatches(messageText, "зураг")) 
-      sendImageMessage(senderID);
-    else if (textMatches(messageText, "gif")) 
-        sendGifMessage(senderID);
     else if (textMatches(messageText, "get started")) 
         sendWelcome(senderID);
-    else if (textMatches(messageText, "дуу")) 
-        sendAudioMessage(senderID);
-    else if (textMatches(messageText, "бичлэг")) 
-        sendVideoMessage(senderID);
-    else if (textMatches(messageText, "файл")) 
-        sendFileMessage(senderID);
-    else if (textMatches(messageText, "товч")) 
-        sendButtonMessage(senderID);
-    else if (textMatches(messageText, "вэб")) 
-        sendWebUrl(senderID);
-    else if (textMatches(messageText, "утас")) 
-        sendPhoneNumber(senderID);
-    else if (textMatches(messageText, "судалгаа")) 
-        sendFormUrl(senderID);
-    else if (textMatches(messageText, "quick reply")) 
-      sendQuickReply(senderID);
     else if (textMatches(messageText, "read receipt")) 
       sendReadReceipt(senderID);
     else if (textMatches(messageText, "typing on")) 
       sendTypingOn(senderID);
     else if (textMatches(messageText, "typing off")) 
       sendTypingOff(senderID);
-    else if (textMatches(messageText, "сургалт")) 
-      sendGenericMessage(senderID);
-    else if (textMatches(messageText, "хичээл")) 
-      sendReceiptMessage(senderID);
     else if (textMatches(messageText, "тусламж")) 
       sendHelp(senderID);
     else
@@ -272,95 +231,6 @@ function receivedMessage(event) {
   } else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
   }
-}
-//to find clarification and search for user search data
-function askMore(senderID, messageText){
-      var similarWords = findSimilarKeyword(messageText);
-      if(similarWords.length != 0){
-        sendTextMessage(senderID, "Дараах түлхүүр үгүүдээс сонгоно уу");
-        sendTextMessage(senderID, similarWords);
-        // askSimilarOptions(senderID, similarWords);
-      }
-      else
-        sendTextMessage(senderID, "Таны хайсан өгөгдөл олдсонгүй!");
-}
-//find similar questions when searching for a findable data
-function findSimilarKeyword(keyword){
-  //Send neighboring words to arrays as an option
-  var similarQuestions = new Array();
-  var sum = "";
-  readJSON().forEach(function(data){
-    var words = data.input.split(" ");
-    //Start a given keyword or locate neighbor words
-    if(words.indexOf(keyword) != -1){
-      var index = words.indexOf(keyword);
-      //to get the word neighbor with the word
-      var neighborWord = index == words.length ? words[index-1]+" "+keyword : keyword+" "+words[index+1];
-      //the word has not been registered before
-      if(sum.indexOf(neighborWord)==-1)
-        sum+= sum=="" ? neighborWord : ","+neighborWord;
-      similarQuestions.push({"content_type":"text","title":neighborWord});
-    }
-  });
-    return sum;
-}
-//ask questions from similar words
-function askSimilarOptions(recipientId, words){
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: "Since your search is too general, select from the following options",
-      quick_replies: words
-    }
-  };
-
-  callSendAPI(messageData);
-}
-//Read the data from the json file
-function readJSON(){
-  var fs = require('fs');
-  return JSON.parse(fs.readFileSync('data/training_data.json', 'utf8'));
-}
-
-//clear more characters
-function cleanJSON(json){
-  for(var i=0; i<json.length; i++){
-    json[i].input = json[i].input.replace("/[\?\,\:]/", "");
-  }
-}
-
-function learnAI(json){
-  console.log("AI суралцаж эхэллээ...");
-  var startedTime = new Date().getTime();
-  // Repeat multiple levels
-  var TextClassifier = limdu.classifiers.multilabel.BinaryRelevance.bind(0, {
-  	binaryClassifierType: limdu.classifiers.Winnow.bind(0, {retrain_count: 100})
-  });
-  
-  // Unblock the words in the sentence with spaces and create attributes
-  var WordExtractor = function(input, features) {
-  	input.split(" ").forEach(function(word) {
-  		features[word]=1;
-  	});
-  };
-  
-  limduClassifier = new limdu.classifiers.EnhancedClassifier({
-  	classifierType: TextClassifier,
-  	featureExtractor: WordExtractor
-  });
-  
-  limduClassifier.trainBatch(json);
-  console.log("AI суралцаж дууслаа. \n Нийт "+json.length + " ширхэг өгөдлийг " + (new Date().getTime()-startedTime)/1000+" секундэд уншиж дууслаа.");
-}
-
-function answerAI(question){
-  var startedTime = new Date().getTime();
-  console.log("AI хариултыг хайж байна...");
-  var result =  limduClassifier.classify(question);
-  console.log("AI хариултыг оллоо.  \n " + (new Date().getTime()-startedTime)/1000+" секундэд уншиж дууслаа.");
-  return result;
 }
 
 // текст илгээх
@@ -415,7 +285,7 @@ function sendWelcome(recipientId) {
       var greetings = ["Hey", "Hello", "Good Evening", "Good Morning", "What's up", "Сайн уу","Юу байна", "Сайн уу"];
       var randomGreeting = getRandomItemFromArray(greetings);
       var welcomeMsg = `${randomGreeting} ${userName}, 
-I am Techstar AI bot.
+I am Cryptocurrency AI bot.
 ¯\\_(ツ)_/¯ .
       `;
       sendTextMessage(recipientId, welcomeMsg);
@@ -477,351 +347,6 @@ function receivedMessageRead(event) {
   console.log("Received message read event for watermark %d and sequence " +
     "number %d", watermark, sequenceNumber);
 }
-
-function receivedAccountLink(event) {
-  var senderID = event.sender.id;
-  var recipientID = event.recipient.id;
-
-  var status = event.account_linking.status;
-  var authCode = event.account_linking.authorization_code;
-
-  console.log("Received account link event with for user %d with status %s " +
-    "and auth code %s ", senderID, status, authCode);
-}
-
-function sendImageMessage(recipientId) {
-  sendTypingOn(receiptId);
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "image",
-        payload: {
-          url:  SERVER_URL+"/img/pro.png"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-  sendTypingOff(recipientId);
-}
-
-function sendGifMessage(recipientId) {
-  sendTypingOn(recipientId);
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "image",
-        payload: {
-          url: SERVER_URL+"/img/giphy.gif"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-  sendTypingoff(recipientId);
-}
-
-function sendAudioMessage(recipientId) {
-  sendTypingOn(recipientId);
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "audio",
-        payload: {
-          url: SERVER_URL+"/img/duu.mp3"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-  sendTypingOff(receiptId);
-}
-
-function sendVideoMessage(recipientId) {
-  sendTypingOn(recipientId);
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "video",
-        payload: {
-          url: SERVER_URL+"/img/eminem.mov"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-  sendTypingOff(recipientId);
-}
-
-function sendFileMessage(recipientId) {
-  sendTypingOn(recipientId);
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "file",
-        payload: {
-          url: SERVER_URL+"/img/hi.txt"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-  sendTypingOff(recipientId);
-}
-
-function sendButtonMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Холбоо барих мэдээллүүд",
-          buttons:[{
-            type: "web_url",
-            url: SERVER_URL,
-            title: "Вэб хуудас"
-          }, {
-            type: "phone_number",
-            title: "Утасны дугаар",
-            payload: "+97689860933"
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-function sendPhoneNumber (recipientId) {
-    var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Холбоо барих утасны дугаар",
-          buttons:[{
-            type: "phone_number",
-            title: "Утасруу залгах",
-            payload: "+97689860933"
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-function sendWebUrl(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Вэб хуудас",
-          buttons:[{
-            type: "web_url",
-            url: SERVER_URL,
-            title: "Вэб хуудас"
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-
-function sendFormUrl(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Судалгаа",
-          buttons:[{
-            type: "web_url",
-            url: "https://docs.google.com/forms/",
-            title: "Судалгаа өгөх"
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-
-function sendGenericMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: [{
-            title: "IBT",
-            subtitle: "IELTS, TOEFL-д бэлдэнэ",
-            item_url: SERVER_URL,               
-            image_url: SERVER_URL+"/img/pro.png",
-            buttons: [{
-              type: "web_url",
-              url: SERVER_URL,
-              title: "Вэбэд зочлох"
-            }, {
-              type: "postback",
-              title: "Болих",
-              payload: "Payload for first bubble",
-            }],
-          }, {
-            title: "Nogoonjade",
-            subtitle: "Nogoonjade сургалтын төв",
-            item_url: SERVER_URL,               
-            image_url: SERVER_URL+"/img/pro.png",
-            buttons: [{
-              type: "web_url",
-              url: SERVER_URL,
-              title: "Вэбэд зочлох"
-            }, {
-              type: "postback",
-              title: "Болих",
-              payload: "Payload for second bubble",
-            }]
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-function sendReceiptMessage(recipientId) {
-  var receiptId = "order" + Math.floor(Math.random()*1000);
-
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message:{
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "receipt",
-          recipient_name: "ToRoo",
-          order_number: receiptId,
-          currency: "USD",
-          payment_method: "Visa 1234",        
-          timestamp: "1428444852", 
-          elements: [ {
-            title: "IELTS",
-            subtitle: "Төлбөртэй хичээл үзсэн",
-            quantity: 1,
-            price: 99.99,
-            currency: "USD",
-            image_url: SERVER_URL + "/assets/gearvrsq.png"
-          }],
-          address: {
-            street_1: "Itpark",
-            street_2: "",
-            city: "",
-            postal_code: "94025",
-            state: "Ulaanbaatar",
-            country: "Mongolia"
-          },
-          summary: {
-            subtotal: 698.99,
-            shipping_cost: 20.00,
-            total_tax: 57.67,
-            total_cost: 626.66
-          },
-          adjustments: [{
-            name: "New Customer Discount",
-            amount: -50
-          }, {
-            name: "$100 Off Coupon",
-            amount: -100
-          }]
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-function sendQuickReply(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: "What's your favorite movie genre?",
-      quick_replies: [
-        {
-          "content_type":"text",
-          "title":"Action",
-          "payload":"DEVELOPER_DEFINED_PAYLOAD_FOR_PICKING_ACTION"
-        },
-        {
-          "content_type":"text",
-          "title":"Comedy",
-          "payload":"DEVELOPER_DEFINED_PAYLOAD_FOR_PICKING_COMEDY"
-        },
-        {
-          "content_type":"text",
-          "title":"Drama",
-          "payload":"DEVELOPER_DEFINED_PAYLOAD_FOR_PICKING_DRAMA"
-        }
-      ]
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
 
 function sendReadReceipt(recipientId) {
   console.log("Sending a read receipt to mark message as seen");
