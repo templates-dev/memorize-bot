@@ -405,8 +405,6 @@ function logObject(obj) {
 
 app.listen(app.get('port'), function() {
   console.log('Bot server is running on port', app.get('port'));
-  //learn start here
-  learnAI(readJSON());
 });
 
 module.exports = app;
