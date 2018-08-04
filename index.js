@@ -2,6 +2,8 @@
 
 const express = require('express'),
       config = require('config'),
+      request = require('request'),
+      async = require('async'),
       Intelligo = require('intelligo');
       
 const app = express();
@@ -28,11 +30,34 @@ const bot = new Intelligo({
 
 bot.initWebhook();
 
+let dataSet = [];
+
+function getWords() {
+  request({
+    uri: 'https://jisho.techstar.cloud/api/words',
+
+  }, function (error, response, body) {
+    if (!error) {
+      const parsed = JSON.parse(body);
+      const words = parsed.memorize;
+      
+      async.each(words, function(word, callback){
+        dataSet.push({input: word.meanings, output: { meanings: word.meanings, meaningsMongolia: word.meaningsMongolia,  character: word.character, kanji: word.kanji, partOfSpeech: word.partOfSpeech } });
+        
+      }, function(error){
+          console.error(error);
+      });
+      bot.learn(dataSet);
+    } else {
+      console.error("Failed calling jisho API");
+    }
+  });  
+}
+
+getWords();
+
 //Train the neural network with an array of training data.
-bot.learn([
-  { input: 'I feel great about the world!', output: 'happy' },
-  { input: 'The world is a terrible place!', output: 'sad' },
-]);
+// bot.learn(dataSet);
 
 //Subscribe to messages sent by the user with the bot.on() method.
 bot.on('message', (event) => {
@@ -43,10 +68,13 @@ bot.on('message', (event) => {
   if (message.text) {
       const result = bot.answer(message.text);
       
-      if (result == null || result == '')
-        bot.sendTextMessage(senderID, "I don't now");
-      else
-        bot.sendTextMessage(senderID, result+"");
+      
+      if (result == null || result == '') {
+        bot.sendTextMessage(senderID, "Мэдэхгүй үг байна. ");
+      } else {
+        const word = JSON.parse(result);
+        bot.sendTextMessage(senderID, word.character+" "+word.kanji+" "+word.meaningsMongolia+" "+word.partOfSpeech);
+      }
   } 
 });
 app.set('port', process.env.PORT || 8080);
