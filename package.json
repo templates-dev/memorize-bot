@@ -26,7 +26,8 @@
   "homepage": "https://github.com/techstar-cloud/memorize-bot#readme",
   "dependencies": {
     "config": "^2.0.1",
-    "intelligo": "^0.5.6",
+    "express": "^4.16.3",
+    "intelligo": "^0.5.8",
     "request": "^2.87.0"
   }
 }
