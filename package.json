@@ -1,0 +1,32 @@
+{
+  "name": "memorize-bot",
+  "version": "0.0.1",
+  "description": "Memorize chatbot",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techstar-cloud/memorize-bot.git"
+  },
+  "keywords": [
+    "bot",
+    "ai",
+    "memory",
+    "intelligo",
+    "chatbot",
+    "messenger-bot"
+  ],
+  "author": "Turtuvshin Byambaa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/techstar-cloud/memorize-bot/issues"
+  },
+  "homepage": "https://github.com/techstar-cloud/memorize-bot#readme",
+  "dependencies": {
+    "config": "^2.0.1",
+    "intelligo": "^0.5.6",
+    "request": "^2.87.0"
+  }
+}
