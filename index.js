@@ -29,7 +29,49 @@ const bot = new Intelligo({
 });
 
 bot.initWebhook();
-
+bot.addGreeting("Japanese-English-Mongolian dictionary chatbot. It lets you find words, kanji and more quickly and easily.");
+bot.addGetStartedButton();
+bot.addPersistentMenu([
+    {
+      "locale":"default",
+      "composer_input_disabled": false,
+      "call_to_actions":[
+        {
+          "title":"Home",
+          "type":"postback",
+          "payload":"HOME"
+        },
+        {
+          "title":"Nested Menu Example",
+          "type":"nested",
+          "call_to_actions":[
+            {
+              "title":"Who am I",
+              "type":"postback",
+              "payload":"WHO"
+            },
+            {
+              "title":"Joke",
+              "type":"postback",
+              "payload":"joke"
+            },
+            {
+              "title":"Contact Info",
+              "type":"postback",
+              "payload":"CONTACT"
+            }
+          ]
+        },
+        {
+          "type":"web_url",
+          "title":"Source code",
+          "url":"https://github.com/techstar-cloud/memorize-bot",
+          "webview_height_ratio":"full"
+        }
+      ]
+    }
+  ]);
+    
 let dataSet = [];
 
 function getWords() {
@@ -66,7 +108,7 @@ bot.on('message', (event) => {
         message = event.message;
       
   if (message.text) {
-      const result = bot.answer(message.text);
+      const result = bot.answer(message.text.toLowerCase());
       
       
       if (result == null || result == '') {
