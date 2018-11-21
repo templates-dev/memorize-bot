@@ -4,6 +4,7 @@ const express = require('express'),
       config = require('config'),
       request = require('request'),
       async = require('async'),
+      fs = require('fs'),
       Intelligo = require('intelligo');
       
 const app = express();
@@ -72,35 +73,36 @@ bot.addPersistentMenu([
     }
   ]);
     
-let dataSet = [];
+// let dataSet = [];
 
-function getWords() {
-  request({
-    uri: 'https://jisho.techstar.cloud/api/words',
+// function getWords() {
+//   request({
+//     uri: 'https://jisho.techstar.cloud/api/words',
 
-  }, function (error, response, body) {
-    if (!error) {
-      const parsed = JSON.parse(body);
-      const words = parsed.memorize;
+//   }, function (error, response, body) {
+//     if (!error) {
+//       const parsed = JSON.parse(body);
+//       const words = parsed.memorize;
       
-      async.each(words, function(word, callback){
-        dataSet.push({input: word.meanings, output: { meanings: word.meanings, meaningsMongolia: word.meaningsMongolia,  character: word.character, kanji: word.kanji, partOfSpeech: word.partOfSpeech } });
+//       async.each(words, function(word, callback){
+//         dataSet.push({input: word.meanings, output: { meanings: word.meanings, meaningsMongolia: word.meaningsMongolia,  character: word.character, kanji: word.kanji, partOfSpeech: word.partOfSpeech } });
         
-      }, function(error){
-          console.error(error);
-      });
-      bot.learn(dataSet);
-    } else {
-      console.error("Failed calling jisho API");
-    }
-  });  
-}
+//       }, function(error){
+//           console.error(error);
+//       });
+//       bot.learn(dataSet);
+//     } else {
+//       console.error("Failed calling jisho API");
+//     }
+//   });  
+// }
 
-getWords();
+// getWords();
 
 //Train the neural network with an array of training data.
-// bot.learn(dataSet);
-
+console.log("Starting training");
+bot.learn(JSON.parse(fs.readFileSync('data/train.json', 'utf8')));
+console.log("Finish training");
 //Subscribe to messages sent by the user with the bot.on() method.
 bot.on('message', (event) => {
    
@@ -110,16 +112,14 @@ bot.on('message', (event) => {
   if (message.text) {
       const result = bot.answer(message.text.toLowerCase());
       
-      
       if (result == null || result == '') {
         bot.sendTextMessage(senderID, "Мэдэхгүй үг байна. ");
       } else {
-        const word = JSON.parse(result);
-        bot.sendTextMessage(senderID, word.character+" "+word.kanji+" "+word.meaningsMongolia+" "+word.partOfSpeech);
+        bot.sendTextMessage(senderID, result);
       }
   } 
 });
 app.set('port', process.env.PORT || 8080);
 app.listen(app.get('port'), function() {
   console.log('Server is running on port', app.get('port'));
-});
+}); 
